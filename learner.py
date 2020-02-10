@@ -50,7 +50,7 @@ def main(env_name, seed, hyper_params):
     torch.manual_seed(seed)
     np.random.seed(seed)
     env.seed(seed)
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     kwargs = {
         'device': device,
