@@ -61,7 +61,7 @@ def average_plot(env_name, seeds, hyper_params, x_min, x_max, y_min, y_max):
 
 
 if __name__ == '__main__':
-    env_name = 'HalfCheetah-v2'
+    env_name = 'Swimmer-v2'
 
     hyper_parameters = {
         'max_time_step': 1000000,
@@ -80,8 +80,8 @@ if __name__ == '__main__':
     seeds = range(1, 11)
     x_min = 0
     x_max = 1000000
-    y_min = -500
-    y_max = 10000
+    y_min = -50
+    y_max = 120
 
     for seed in seeds:
         episode_profits_plot(env_name, seed, hyper_parameters, x_min, x_max, y_min, y_max)

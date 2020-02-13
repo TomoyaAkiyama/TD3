@@ -134,11 +134,11 @@ def main(env_name, seed, hyper_params):
 
 
 if __name__ == '__main__':
-    env_name = 'Swimmer-v2'
-    seed = 10
+    env_name = 'HalfCheetah-v2'
+    seed = 1
 
     hyper_parameters = {
-        'max_time_step': 15000,
+        'max_time_step': 1000000,
         'initial_time_step': 10000,
         'batch_size': 256,
         'exploration_noise': 0.1,
@@ -153,7 +153,6 @@ if __name__ == '__main__':
 
     start = time.time()
     main(env_name, seed, hyper_parameters)
-    elapsed_time = time.time() - start
-    print('\nelapsed time : {}'.format(elapsed_time))
+    print('\nelapsed time : {}'.format(time.time() - start))
 
 

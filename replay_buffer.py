@@ -34,7 +34,7 @@ class ReplayBuffer:
         self._step = (self._step + 1) % self._max_size
 
     def sample(self, batch_size):
-        indices = np.random.choice(self._size, batch_size, replace=False)
+        indices = np.random.randint(0, self._size, size=batch_size)
 
         state_batch = self.state[indices]
         next_state_batch = self.next_state[indices]
