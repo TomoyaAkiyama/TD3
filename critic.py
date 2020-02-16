@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 
-activations = nn.ModuleDict([
-    ['Tanh', nn.Tanh()],
-    ['ReLU', nn.ReLU()]
-])
+activations = nn.ModuleDict({
+    'Tanh': nn.Tanh(),
+    'ReLU': nn.ReLU(),
+})
 
 
 class Critic(nn.Module):

@@ -1,17 +1,14 @@
 import torch.nn as nn
 
-activations = nn.ModuleDict([
-    ['Tanh', nn.Tanh()],
-    ['ReLU', nn.ReLU()]
-])
+activations = nn.ModuleDict({
+    'Tanh': nn.Tanh(),
+    'ReLU': nn.ReLU(),
+})
 
 
 class Actor(nn.Module):
     def __init__(self, state_dim, hidden_size, action_dim, action_max, activation='ReLU'):
         super(Actor, self).__init__()
-        self.output_num = action_dim
-
-        self.activation = activation
 
         layers = [
             nn.Linear(state_dim, hidden_size),

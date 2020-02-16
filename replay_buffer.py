@@ -43,10 +43,10 @@ class ReplayBuffer:
         masks_batch = self.masks[indices]
 
         return (
-            torch.Tensor(state_batch).to(self.device),
-            torch.Tensor(next_state_batch).to(self.device),
-            torch.Tensor(actions_batch).to(self.device),
-            torch.Tensor(rewards_batch).to(self.device),
-            torch.Tensor(masks_batch).to(self.device)
+            torch.tensor(state_batch, dtype=torch.float).to(self.device),
+            torch.tensor(next_state_batch, dtype=torch.float).to(self.device),
+            torch.tensor(actions_batch, dtype=torch.float).to(self.device),
+            torch.tensor(rewards_batch, dtype=torch.float).to(self.device),
+            torch.tensor(masks_batch, dtype=torch.float).to(self.device)
         )
 

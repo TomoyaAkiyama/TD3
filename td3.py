@@ -4,6 +4,7 @@ import os
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
+
 from actor import Actor
 from critic import Critic
 
@@ -40,7 +41,7 @@ class TD3:
         self.iteration_num = 0
 
     def select_action(self, state):
-        state = torch.Tensor(state.reshape(1, -1)).to(self.device)
+        state = torch.tensor(state.reshape(1, -1), dtype=torch.float).to(self.device)
         action = self.actor.forward(state)
         return action.cpu().detach().numpy().flatten()
 
