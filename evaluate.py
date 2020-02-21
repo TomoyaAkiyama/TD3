@@ -32,7 +32,7 @@ def main(env_name, seed, hyper_params, eval_episodes=10):
         'policy_freq': hyper_params['policy_freq']
     }
 
-    policy = TD3(**kwargs)
+    agent = TD3(**kwargs)
 
     file_dir = os.path.abspath(os.path.dirname(__file__))
     save_dir = os.path.join(
@@ -42,7 +42,7 @@ def main(env_name, seed, hyper_params, eval_episodes=10):
         'seed' + str(seed),
         'learned_model'
     )
-    policy.load(save_dir)
+    agent.load(save_dir)
 
     env.seed(seed + 100)
 
@@ -53,7 +53,7 @@ def main(env_name, seed, hyper_params, eval_episodes=10):
         sum_rewards = 0
         while not done:
             env.render()
-            action = policy.select_action(state)
+            action = agent.rollout_actor.deterministic_action(state)
             next_state, reward, done, _ = env.step(action)
             sum_rewards += reward
             state = next_state

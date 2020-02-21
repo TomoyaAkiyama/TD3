@@ -26,7 +26,7 @@ def eval_policy(policy, env_name, seed, eval_episodes=10):
         sum_rewards = 0
         while not done:
             # env.render()
-            action = policy.select_action(state)
+            action = policy.deterministic_action(state)
             next_state, reward, done, _ = env.step(action)
             sum_rewards += reward
             state = next_state
@@ -63,10 +63,11 @@ def main(env_name, seed, hyper_params):
         'lr': hyper_params['lr'],
         'policy_noise': hyper_params['policy_noise'] * action_max,
         'noise_clip': hyper_params['noise_clip'] * action_max,
+        'exploration_noise': hyper_params['exploration_noise'] * action_max,
         'policy_freq': hyper_params['policy_freq']
     }
 
-    policy = TD3(**kwargs)
+    agent = TD3(**kwargs)
     replay_buffer = ReplayBuffer(state_dim, action_dim, device, max_size=int(1e6))
 
     file_dir = os.path.abspath(os.path.dirname(__file__))
@@ -78,7 +79,7 @@ def main(env_name, seed, hyper_params):
     )
     os.makedirs(save_dir, exist_ok=True)
 
-    evals = [eval_policy(policy, env_name, seed)]
+    evals = [eval_policy(agent.rollout_actor, env_name, seed)]
 
     state = env.reset()
     episode_reward = 0
@@ -91,10 +92,8 @@ def main(env_name, seed, hyper_params):
         if t < hyper_params['initial_time_step']:
             action = env.action_space.sample()
         else:
-            action = (
-                policy.select_action(state)
-                + np.random.normal(0, action_max * hyper_params['exploration_noise'], size=action_dim)
-            )
+            action = agent.rollout_actor.select_action(state)
+
         next_state, reward, done, _ = env.step(action)
         done_buffer = done if episode_time_step < env._max_episode_steps else False
         replay_buffer.add(state, next_state, action, reward, done_buffer)
@@ -103,7 +102,7 @@ def main(env_name, seed, hyper_params):
         episode_reward += reward
 
         if t >= hyper_params['initial_time_step']:
-            policy.train(replay_buffer, batch_size=hyper_params['batch_size'])
+            agent.train(replay_buffer, batch_size=hyper_params['batch_size'])
 
         if done:
             print(f'Total T: {t + 1} Episode Num: {episode_num + 1} Reward: {episode_reward:.3f}')
@@ -114,7 +113,7 @@ def main(env_name, seed, hyper_params):
             episode_num += 1
 
         if (t + 1) % hyper_params['eval_freq'] == 0:
-            evals.append(eval_policy(policy, env_name, seed))
+            evals.append(eval_policy(agent.rollout_actor, env_name, seed))
 
     evals = np.array(evals)
     np.savetxt(os.path.join(save_dir, 'Episode_Rewards.txt'), evals)
@@ -131,7 +130,7 @@ def main(env_name, seed, hyper_params):
 
     model_path = os.path.join(save_dir, 'learned_model')
     os.makedirs(model_path, exist_ok=True)
-    policy.save(model_path)
+    agent.save(model_path)
 
 
 if __name__ == '__main__':
@@ -142,13 +141,13 @@ if __name__ == '__main__':
         'max_time_step': 1000000,
         'initial_time_step': 10000,
         'batch_size': 256,
-        'exploration_noise': 0.1,
         'eval_freq': 5000,
         'gamma': 0.99,
         'tau': 0.005,
         'lr': 3e-4,
         'policy_noise': 0.2,
         'noise_clip': 0.5,
+        'exploration_noise': 0.1,
         'policy_freq': 2
     }
 

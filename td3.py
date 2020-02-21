@@ -21,6 +21,7 @@ class TD3:
             lr=3e-4,
             policy_noise=0.2,
             noise_clip=0.5,
+            exploration_noise=0.1,
             policy_freq=2
     ):
 
@@ -38,12 +39,10 @@ class TD3:
         self.noise_clip = noise_clip
         self.policy_freq = policy_freq
 
-        self.iteration_num = 0
+        self.rollout_actor = TD3RolloutActor(state_dim, action_dim, action_max, exploration_noise)
+        self.sync_rollout_actor()
 
-    def select_action(self, state):
-        state = torch.tensor(state.reshape(1, -1), dtype=torch.float).to(self.device)
-        action = self.actor.forward(state)
-        return action.cpu().detach().numpy().flatten()
+        self.iteration_num = 0
 
     def train(self, replay_buffer, batch_size=100):
         self.iteration_num += 1
@@ -75,6 +74,12 @@ class TD3:
             for param, target_param in zip(self.actor.parameters(), self.target_actor.parameters()):
                 target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
+        self.sync_rollout_actor()
+
+    def sync_rollout_actor(self):
+        for param, target_param in zip(self.actor.parameters(), self.rollout_actor.parameters()):
+            target_param.data.copy_(param.data.cpu())
+
     def save(self, path):
         torch.save(self.critic.state_dict(), os.path.join(path, 'critic.pth'))
         torch.save(self.target_critic.state_dict(), os.path.join(path, 'target_critic.pth'))
@@ -92,3 +97,31 @@ class TD3:
         self.actor.load_state_dict(torch.load(os.path.join(path, 'actor.pth')))
         self.target_actor.load_state_dict(torch.load(os.path.join(path, 'target_actor.pth')))
         self.actor_optimizer.load_state_dict(torch.load(os.path.join(path, 'actor_optimizer.pth')))
+        self.sync_rollout_actor()
+
+
+class TD3RolloutActor:
+    def __init__(
+            self,
+            state_dim,
+            action_dim,
+            action_max,
+            exploration_noise
+    ):
+        self.actor = Actor(state_dim, 256, action_dim, action_max).eval()
+        self.exploration_noise = exploration_noise
+
+    def select_action(self, state):
+        state = torch.tensor(state.reshape(1, -1), dtype=torch.float)
+        action = self.actor.forward(state)
+        noise = torch.randn_like(action) * self.exploration_noise
+        action = action + noise
+        return action.cpu().detach().numpy().flatten()
+
+    def deterministic_action(self, state):
+        state = torch.tensor(state.reshape(1, -1), dtype=torch.float)
+        action = self.actor.forward(state)
+        return action.cpu().detach().numpy().flatten()
+
+    def parameters(self):
+        return self.actor.parameters()
