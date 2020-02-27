@@ -44,7 +44,7 @@ class TD3:
 
         self.iteration_num = 0
 
-    def train(self, replay_buffer, batch_size=100):
+    def train(self, replay_buffer, batch_size=256):
         self.iteration_num += 1
 
         st, nx_st, ac, rw, mask = replay_buffer.sample(batch_size)

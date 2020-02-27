@@ -12,8 +12,6 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 
-torch.set_num_threads(1)
-
 
 def eval_policy(policy, env_name, seed, eval_episodes=10):
     env = gym.make(env_name)
@@ -51,7 +49,8 @@ def main(env_name, seed, hyper_params):
     np.random.seed(seed)
     env.seed(seed)
     env.action_space.np_random.seed(seed)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    device = torch.device('cuda' if hyper_params['use_cuda'] else 'cpu')
 
     kwargs = {
         'device': device,
@@ -86,6 +85,7 @@ def main(env_name, seed, hyper_params):
     episode_time_step = 0
     episode_num = 0
 
+    episode_start = time.time()
     for t in range(hyper_params['max_time_step']):
         episode_time_step += 1
 
@@ -105,15 +105,21 @@ def main(env_name, seed, hyper_params):
             agent.train(replay_buffer, batch_size=hyper_params['batch_size'])
 
         if done:
-            print(f'Total T: {t + 1} Episode Num: {episode_num + 1} Reward: {episode_reward:.3f}')
+            print(f'Total T: {t + 1} Episode Num: {episode_num + 1} Reward: {episode_reward:.3f}',
+                  f'(Frame/sec {episode_time_step / (time.time() - episode_start):.3f})')
             # Reset environment
             state = env.reset()
             episode_reward = 0
             episode_time_step = 0
             episode_num += 1
+            episode_start = time.time()
 
         if (t + 1) % hyper_params['eval_freq'] == 0:
+            test_start = time.time()
+            # test policy
             evals.append(eval_policy(agent.rollout_actor, env_name, seed))
+            test_time = time.time() - test_start
+            episode_start += test_time
 
     evals = np.array(evals)
     np.savetxt(os.path.join(save_dir, 'Episode_Rewards.txt'), evals)
@@ -148,7 +154,8 @@ if __name__ == '__main__':
         'policy_noise': 0.2,
         'noise_clip': 0.5,
         'exploration_noise': 0.1,
-        'policy_freq': 2
+        'policy_freq': 2,
+        'use_cuda': torch.cuda.is_available(),
     }
 
     start = time.time()

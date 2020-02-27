@@ -3,13 +3,12 @@ import numpy as np
 
 
 class ReplayBuffer:
-    def __init__(self, state_dim, action_dim, device, max_size=int(1e6)):
-
-        self.state = np.zeros((max_size, state_dim))
-        self.next_state = np.zeros((max_size, state_dim))
-        self.actions = np.zeros((max_size, action_dim))
-        self.rewards = np.zeros((max_size, 1))
-        self.masks = np.ones((max_size, 1))
+    def __init__(self, state_dim, action_dim, device, max_size=1e6):
+        self.state = torch.zeros([max_size, state_dim], device=device)
+        self.next_state = torch.zeros([max_size, state_dim], device=device)
+        self.rewards = torch.zeros([max_size, 1], device=device)
+        self.actions = torch.zeros([max_size, action_dim], device=device)
+        self.masks = torch.ones([max_size, 1], device=device)
 
         self._max_size = max_size
         self._size = 0
@@ -24,11 +23,12 @@ class ReplayBuffer:
         return self._step
 
     def add(self, state, next_state, action, reward, done):
-        self.state[self._step] = state
-        self.next_state[self._step] = next_state
-        self.actions[self._step] = action
-        self.rewards[self._step] = reward
-        self.masks[self._step] = not done
+
+        self.state[self._step].copy_(torch.tensor(state, dtype=torch.float).to(self.device))
+        self.next_state[self._step].copy_(torch.tensor(next_state, dtype=torch.float).to(self.device))
+        self.actions[self._step].copy_(torch.tensor(action, dtype=torch.float).to(self.device))
+        self.rewards[self._step].copy_(torch.tensor(reward, dtype=torch.float).to(self.device))
+        self.masks[self._step].copy_(torch.tensor([not done], dtype=torch.float).to(self.device))
 
         self._size = min(self._size + 1, self._max_size)
         self._step = (self._step + 1) % self._max_size
@@ -43,10 +43,9 @@ class ReplayBuffer:
         masks_batch = self.masks[indices]
 
         return (
-            torch.tensor(state_batch, dtype=torch.float).to(self.device),
-            torch.tensor(next_state_batch, dtype=torch.float).to(self.device),
-            torch.tensor(actions_batch, dtype=torch.float).to(self.device),
-            torch.tensor(rewards_batch, dtype=torch.float).to(self.device),
-            torch.tensor(masks_batch, dtype=torch.float).to(self.device)
+            state_batch,
+            next_state_batch,
+            actions_batch,
+            rewards_batch,
+            masks_batch
         )
-
